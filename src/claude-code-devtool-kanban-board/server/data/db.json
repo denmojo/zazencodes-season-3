@@ -90,7 +90,7 @@
       "cards": [
         {
           "id": "a7c6159b-0d87-48f0-abfe-448ec5d9c80f",
-          "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
+          "columnId": "eb718c8e-9f3a-4b77-a499-b54e49a2f2ff",
           "title": "Fix dead code in evaluator.py",
           "description": "Lines 942-1153 in evaluator.py are unreachable — a full duplicate of _build_overall_summary_table appears after an early return on line 941. Delete the duplicate block.",
           "order": 0
@@ -100,49 +100,49 @@
           "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
           "title": "Wire up --yes / -y CLI flag",
           "description": "The execute subparser never adds the --yes/-y argument (cli.py uses getattr(args, 'yes', False) as a silent fallback). Add run_parser.add_argument('--yes', '-y', ...) so the documented flag actually works.",
-          "order": 1
+          "order": 0
         },
         {
           "id": "60edcab9-50f1-478b-99b1-5410e993a101",
-          "columnId": "eb718c8e-9f3a-4b77-a499-b54e49a2f2ff",
+          "columnId": "8c6aafa6-ca36-49c9-ad24-5129851b5967",
           "title": "Make judge LLM call async",
           "description": "Judge.grade() calls self.llm.invoke() (blocking) while the evaluator runs inside asyncio.gather. Switch to ainvoke and make grade an async method so it doesn't block the event loop during concurrent model runs.",
           "order": 0
         },
         {
           "id": "9bfcd854-8e0e-4e04-ba22-5dffa7549923",
-          "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
+          "columnId": "eb718c8e-9f3a-4b77-a499-b54e49a2f2ff",
           "title": "Honour JudgeConfig.system_prompt",
           "description": "JudgeConfig has a system_prompt field but Judge.__init__ never passes it to the LLM. Wire it up so users can customise the judge's system prompt from the config file.",
-          "order": 2
+          "order": 1
         },
         {
           "id": "cc7f81b9-c498-4a87-a539-954ad71f4613",
           "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
           "title": "Gitignore eval output files",
           "description": "The repo root is cluttered with eval_*.json and eval_*.log artefacts. Add patterns to .gitignore so run outputs aren't accidentally committed.",
-          "order": 3
+          "order": 1
         },
         {
           "id": "8e4e2fdb-d7de-4816-a9bb-72ed313fec5c",
           "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
           "title": "Add --output-dir CLI flag to execute",
           "description": "EvalConfig has an output_dir field but there's no way to set it from the CLI without editing the JSON. Add --output-dir to the execute subparser and pass it through to the evaluator.",
-          "order": 4
+          "order": 2
         },
         {
           "id": "fa56ff07-2bd4-475c-b506-42615e2ff8f4",
           "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
           "title": "Add CI test workflow",
           "description": "publish.yml only handles PyPI publishing; there's no workflow that runs the unit-test suite on PRs. Add a separate test.yml that runs uv run pytest on push/pull_request.",
-          "order": 5
+          "order": 3
         },
         {
           "id": "4a06c630-57ca-4c48-9406-dcf98e810129",
           "columnId": "fdf9f6da-b316-4f2a-8c61-49ddbd88a805",
           "title": "Add arbiter compare command",
           "description": "Add a CLI subcommand (arbiter compare a.json b.json) that diffs two eval result files side-by-side — showing per-model pass-rate deltas, latency changes, and cost differences.",
-          "order": 6
+          "order": 4
         }
       ]
     },
