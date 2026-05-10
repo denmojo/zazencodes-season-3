@@ -17,7 +17,7 @@ npm run dev
 - Columns: create / rename / delete
 - Cards:   create / edit / delete
 - Drag-and-drop cards between columns
-- State persisted to `server/data/board.json`
+- State persisted to `server/data/db.json`
 
 ## CLI
 
@@ -28,7 +28,7 @@ A terminal CLI that talks to the API.
 ```bash
 npm install
 npm run build -w cli
-cd cli && npm link
+npm link -w cli
 ```
 
 This links `kanban` as a global command. The server must be running for commands to work.
