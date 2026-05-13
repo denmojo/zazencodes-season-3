@@ -2,6 +2,9 @@
 src/dry-run-workflow-for-agent-skills/fs-cleanup-example/example_business_project
 src/dry-run-workflow-for-agent-skills/fs-cleanup-example/vegan_icecream_example_project
 
+# bookkeeping-agent — safety net for credentials across both local and cloud
+src/bookkeeping-agent/**/agent-home/auth.json
+
 
 # Python
 __pycache__/
