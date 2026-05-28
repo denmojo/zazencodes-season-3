@@ -5,5 +5,9 @@ dist/
 .env
 .env.local
 
-# persisted runtime state — keep file present, ignore changes
+# persisted runtime state - keep file present, ignore changes
 server/data/board.json
+
+# Local Claude Code project hooks - copy from settings.json.example and edit the
+# absolute path to your checkout. See README → "Claude Code hooks (optional)".
+.claude/settings.json

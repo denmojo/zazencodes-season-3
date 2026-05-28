@@ -70,3 +70,21 @@ npm run build -w cli
 ```bash
 npm unlink -g kanban-cli
 ```
+
+## Claude Code hooks (optional)
+
+This project ships a `.claude/settings.json.example` with two PostToolUse hooks:
+
+- Auto-sync `.claude/skills/kanban-cli/SKILL.md` to `~/.claude/skills/kanban-cli/SKILL.md` on edit.
+- Auto-rebuild the CLI (`npm run build -w cli`) when any file under `cli/src/` is edited.
+
+The auto-rebuild hook needs an absolute path to your checkout, which makes it non-portable, so the active `.claude/settings.json` is gitignored. To enable the hooks locally:
+
+```bash
+cp .claude/settings.json.example .claude/settings.json
+# then edit the `cd /Users/.../claude-code-devtool-kanban-board` path inside
+# settings.json to match your checkout, e.g. on macOS:
+#   cd /Users/<you>/<path-to>/zazencodes-season-3/src/claude-code-devtool-kanban-board
+```
+
+`settings.json` is gitignored so your local path never gets committed.
