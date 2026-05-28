@@ -41,6 +41,30 @@ projectsRouter.patch("/:id", async (req, res) => {
   res.json(updated);
 });
 
+projectsRouter.post("/:id/complete", async (req, res) => {
+  const { id } = req.params;
+  const updated = await mutateDb((db) => {
+    const project = db.projects.find((p) => p.id === id);
+    if (!project) return null;
+    project.completedAt = new Date().toISOString();
+    return project;
+  });
+  if (!updated) return res.status(404).json({ error: "project not found" });
+  res.json(updated);
+});
+
+projectsRouter.post("/:id/reopen", async (req, res) => {
+  const { id } = req.params;
+  const updated = await mutateDb((db) => {
+    const project = db.projects.find((p) => p.id === id);
+    if (!project) return null;
+    project.completedAt = null;
+    return project;
+  });
+  if (!updated) return res.status(404).json({ error: "project not found" });
+  res.json(updated);
+});
+
 projectsRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
   const ok = await mutateDb((db) => {

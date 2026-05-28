@@ -21,6 +21,7 @@ export type Project = {
   id: string;
   name: string;
   createdAt: string;
+  completedAt: string | null;
 };
 
 export type Database = {

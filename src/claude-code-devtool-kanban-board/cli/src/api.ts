@@ -34,6 +34,10 @@ export const api = {
     request<Project>("PATCH", `/api/projects/${id}`, { name }),
   deleteProject: (id: string) =>
     request<void>("DELETE", `/api/projects/${id}`),
+  completeProject: (id: string) =>
+    request<Project>("POST", `/api/projects/${id}/complete`),
+  reopenProject: (id: string) =>
+    request<Project>("POST", `/api/projects/${id}/reopen`),
 
   getBoard: (projectId: string) =>
     request<Board>("GET", `/api/projects/${projectId}/board`),

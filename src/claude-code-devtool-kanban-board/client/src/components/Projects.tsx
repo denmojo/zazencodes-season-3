@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { api, type Project } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +30,7 @@ export function Projects() {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DialogState>({ mode: "closed" });
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -45,6 +54,19 @@ export function Projects() {
     await refresh();
   };
 
+  const handleComplete = async (project: Project) => {
+    await api.completeProject(project.id);
+    await refresh();
+  };
+
+  const handleReopen = async (project: Project) => {
+    await api.reopenProject(project.id);
+    await refresh();
+  };
+
+  const active = (projects ?? []).filter((p) => p.completedAt === null);
+  const completed = (projects ?? []).filter((p) => p.completedAt !== null);
+
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b bg-background px-6 py-3">
@@ -61,55 +83,61 @@ export function Projects() {
         )}
         {projects === null ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
-        ) : projects.length === 0 ? (
+        ) : active.length === 0 && completed.length === 0 ? (
           <div className="text-sm text-muted-foreground">
             No projects yet. Click "New project" to create your first board.
           </div>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {projects.map((p) => (
-              <li
-                key={p.id}
-                className="group flex items-center justify-between rounded-lg border bg-muted/40 p-4 transition-colors hover:bg-muted"
-              >
+          <>
+            {active.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                No active projects.
+              </div>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {active.map((p) => (
+                  <ProjectItem
+                    key={p.id}
+                    project={p}
+                    onOpen={() => navigate(`/projects/${p.id}`)}
+                    onEdit={() => setDialog({ mode: "edit", project: p })}
+                    onDelete={() => void handleDelete(p)}
+                    onComplete={() => void handleComplete(p)}
+                  />
+                ))}
+              </ul>
+            )}
+
+            {completed.length > 0 && (
+              <div className="mt-8">
                 <button
-                  className="flex-1 text-left"
-                  onClick={() => navigate(`/projects/${p.id}`)}
+                  className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowCompleted((v) => !v)}
                 >
-                  <div className="font-semibold tracking-tight">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Created {new Date(p.createdAt).toLocaleDateString()}
-                  </div>
+                  {showCompleted ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                  Completed ({completed.length})
                 </button>
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDialog({ mode: "edit", project: p });
-                    }}
-                    aria-label="Rename project"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-destructive hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleDelete(p);
-                    }}
-                    aria-label="Delete project"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                {showCompleted && (
+                  <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {completed.map((p) => (
+                      <ProjectItem
+                        key={p.id}
+                        project={p}
+                        onOpen={() => navigate(`/projects/${p.id}`)}
+                        onEdit={() => setDialog({ mode: "edit", project: p })}
+                        onDelete={() => void handleDelete(p)}
+                        onReopen={() => void handleReopen(p)}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -126,6 +154,106 @@ export function Projects() {
         }}
       />
     </div>
+  );
+}
+
+type ProjectItemProps = {
+  project: Project;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onComplete?: () => void;
+  onReopen?: () => void;
+};
+
+function ProjectItem({
+  project,
+  onOpen,
+  onEdit,
+  onDelete,
+  onComplete,
+  onReopen,
+}: ProjectItemProps) {
+  const isCompleted = project.completedAt !== null;
+  return (
+    <li
+      className={`group flex items-center justify-between rounded-lg border p-4 transition-colors ${
+        isCompleted
+          ? "bg-muted/20 opacity-60 hover:opacity-100"
+          : "bg-muted/40 hover:bg-muted"
+      }`}
+    >
+      <button className="flex-1 text-left" onClick={onOpen}>
+        <div
+          className={`font-semibold tracking-tight ${
+            isCompleted ? "text-muted-foreground" : ""
+          }`}
+        >
+          {project.name}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {isCompleted
+            ? `Completed ${new Date(project.completedAt!).toLocaleDateString()}`
+            : `Created ${new Date(project.createdAt).toLocaleDateString()}`}
+        </div>
+      </button>
+      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {onComplete && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onComplete();
+            }}
+            aria-label="Mark project completed"
+            title="Mark completed"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {onReopen && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onReopen();
+            }}
+            aria-label="Reopen project"
+            title="Reopen"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}
+          aria-label="Rename project"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-destructive hover:text-destructive"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label="Delete project"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </li>
   );
 }
 

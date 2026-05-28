@@ -9,11 +9,18 @@ export const projectsCmd = new Command("projects")
 
 projectsCmd
   .command("list")
-  .description("List all projects")
-  .action(async () => {
+  .description("List projects (active only by default)")
+  .option("-a, --all", "Show active and completed projects")
+  .option("-c, --completed", "Show only completed projects")
+  .action(async (opts: { all?: boolean; completed?: boolean }) => {
     try {
       const projects = await api.listProjects();
-      printProjects(projects);
+      const filtered = opts.all
+        ? projects
+        : opts.completed
+          ? projects.filter((p) => p.completedAt !== null)
+          : projects.filter((p) => p.completedAt === null);
+      printProjects(filtered);
     } catch (err) {
       handleError(err);
     }
@@ -52,6 +59,32 @@ projectsCmd
     try {
       await api.deleteProject(projectId);
       console.log(chalk.green("✓"), "Project deleted.");
+    } catch (err) {
+      handleError(err);
+    }
+  });
+
+projectsCmd
+  .command("complete <projectId>")
+  .description("Mark a project completed (flag only; cards keep their column)")
+  .action(async (projectId: string) => {
+    try {
+      const project = await api.completeProject(projectId);
+      console.log(chalk.green("✓"), "Project completed:");
+      printProject(project);
+    } catch (err) {
+      handleError(err);
+    }
+  });
+
+projectsCmd
+  .command("reopen <projectId>")
+  .description("Reopen a completed project (clears completedAt)")
+  .action(async (projectId: string) => {
+    try {
+      const project = await api.reopenProject(projectId);
+      console.log(chalk.green("✓"), "Project reopened:");
+      printProject(project);
     } catch (err) {
       handleError(err);
     }

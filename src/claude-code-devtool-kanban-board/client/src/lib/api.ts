@@ -21,6 +21,7 @@ export type Project = {
   id: string;
   name: string;
   createdAt: string;
+  completedAt: string | null;
 };
 
 async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
@@ -53,6 +54,10 @@ export const api = {
     }),
   deleteProject: (id: string) =>
     request<void>(`/api/projects/${id}`, { method: "DELETE" }),
+  completeProject: (id: string) =>
+    request<Project>(`/api/projects/${id}/complete`, { method: "POST" }),
+  reopenProject: (id: string) =>
+    request<Project>(`/api/projects/${id}/reopen`, { method: "POST" }),
 
   getBoard: (projectId: string) =>
     request<Board>(`/api/projects/${projectId}/board`),

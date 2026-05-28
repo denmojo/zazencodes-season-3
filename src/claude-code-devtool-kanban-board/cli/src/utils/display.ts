@@ -8,10 +8,19 @@ export function printProjects(projects: Project[]): void {
     return;
   }
   const table = new Table({
-    head: [chalk.cyan("ID"), chalk.cyan("Name"), chalk.cyan("Created")],
+    head: [
+      chalk.cyan("ID"),
+      chalk.cyan("Name"),
+      chalk.cyan("Created"),
+      chalk.cyan("Completed"),
+    ],
   });
   for (const p of projects) {
-    table.push([p.id, p.name, new Date(p.createdAt).toLocaleString()]);
+    const completed = p.completedAt
+      ? new Date(p.completedAt).toLocaleString()
+      : chalk.dim("-");
+    const name = p.completedAt ? chalk.dim(p.name) : p.name;
+    table.push([p.id, name, new Date(p.createdAt).toLocaleString(), completed]);
   }
   console.log(table.toString());
 }

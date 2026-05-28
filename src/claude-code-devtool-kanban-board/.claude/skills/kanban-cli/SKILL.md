@@ -2,7 +2,7 @@
 name: kanban-cli
 description: >
   Use this skill whenever the user wants to interact with the Kanban board via
-  the CLI — listing or creating projects, viewing a board, managing columns, or
+  the CLI - listing or creating projects, viewing a board, managing columns, or
   managing cards (create, update, move, delete). Trigger on any request like
   "show me the board", "add a card", "move that task", "create a project",
   "what's in my backlog", "rename the column", or any other Kanban management
@@ -13,7 +13,7 @@ description: >
 # Kanban CLI Skill
 
 The `kanban` command is globally linked and talks to the API at `http://localhost:3001`
-(override with `KANBAN_API_URL`). The server must be running — if commands fail
+(override with `KANBAN_API_URL`). The server must be running - if commands fail
 with a connection error, remind the user to run `npm run dev -w server`.
 
 ## ID Lookup Pattern
@@ -21,10 +21,10 @@ with a connection error, remind the user to run `npm run dev -w server`.
 Most commands need IDs (project, column, card). Always resolve them before acting:
 
 ```bash
-# Step 1 — list projects to get a project ID
+# Step 1 - list projects to get a project ID
 kanban projects list
 
-# Step 2 — show board to get column/card IDs (shown truncated in [brackets])
+# Step 2 - show board to get column/card IDs (shown truncated in [brackets])
 kanban board <projectId>
 
 # For full IDs of columns or cards, fetch the board JSON directly:
@@ -33,23 +33,29 @@ curl -s http://localhost:3001/api/projects/<projectId>/board | python3 -c \
 ```
 
 When the user refers to something by name ("the In Progress column", "the CI task"),
-look it up — don't ask them to paste an ID.
+look it up - don't ask them to paste an ID.
 
 ## Commands
 
 ### Projects
 ```bash
-kanban projects list
+kanban projects list                       # active only (default)
+kanban projects list --all                 # active + completed
+kanban projects list --completed           # completed only
 kanban projects create "<name>"
 kanban projects rename <projectId> "<new name>"
 kanban projects delete <projectId>
+kanban projects complete <projectId>       # mark completed (flag only)
+kanban projects reopen <projectId>         # clear completed flag
 ```
+
+**Completion semantics:** `complete` only flips a flag on the project. Card columns are **preserved** - cards still in `To Do` or `In Progress` on a completed project represent **deferred** work, not done work. Never auto-move cards to `Done` as part of completion. If the user wants cards moved, that's a separate explicit step.
 
 ### Board (visual overview)
 ```bash
 kanban board <projectId>
 ```
-Shows all columns side-by-side with cards. Card IDs are shown truncated — use
+Shows all columns side-by-side with cards. Card IDs are shown truncated - use
 the curl pattern above when you need a full ID.
 
 ### Columns
@@ -96,8 +102,8 @@ kanban board <projectId>
 
 ## Tips
 
-- Card IDs in `kanban board` output are truncated to 8 chars — use the curl/python3
+- Card IDs in `kanban board` output are truncated to 8 chars - use the curl/python3
   pattern to get the full UUID when needed for update/move/delete.
 - `cards update` accepts any combination of flags; omit flags you don't want to change.
-- `columns delete` cascades — all cards inside are permanently removed.
+- `columns delete` cascades - all cards inside are permanently removed.
 - If there's only one project, skip the listing step and use its ID directly.

@@ -39,6 +39,7 @@ async function migrateIfNeeded(): Promise<Database> {
       id: randomUUID(),
       name: "Default",
       createdAt: new Date().toISOString(),
+      completedAt: null,
     };
     const db: Database = {
       projects: [project],
@@ -53,6 +54,7 @@ async function migrateIfNeeded(): Promise<Database> {
       id: randomUUID(),
       name: "Default",
       createdAt: new Date().toISOString(),
+      completedAt: null,
     };
     const db: Database = {
       projects: [project],
@@ -78,6 +80,9 @@ export async function readDb(): Promise<Database> {
   const parsed = JSON.parse(raw);
   if (!isDatabase(parsed)) {
     return migrateIfNeeded();
+  }
+  for (const p of parsed.projects) {
+    if (p.completedAt === undefined) p.completedAt = null;
   }
   return parsed;
 }
@@ -111,7 +116,7 @@ export async function mutateBoard<T>(
 }
 
 export function createProject(name: string): {
-  project: { id: string; name: string; createdAt: string };
+  project: { id: string; name: string; createdAt: string; completedAt: null };
   board: Board;
 } {
   return {
@@ -119,6 +124,7 @@ export function createProject(name: string): {
       id: randomUUID(),
       name,
       createdAt: new Date().toISOString(),
+      completedAt: null,
     },
     board: emptyBoard(),
   };
