@@ -85,6 +85,26 @@ cardsCmd
   });
 
 cardsCmd
+  .command("history <projectId> <cardId>")
+  .description("Show event history for a single card (newest first)")
+  .action(async (projectId: string, cardId: string) => {
+    try {
+      const events = await api.cardHistory(projectId, cardId);
+      if (events.length === 0) {
+        console.log(chalk.dim("No events."));
+        return;
+      }
+      for (const e of events) {
+        const ts = chalk.dim(e.at);
+        const type = chalk.bold(e.type);
+        console.log(`${ts}  ${type}  ${JSON.stringify(e.data)}`);
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  });
+
+cardsCmd
   .command("delete <projectId> <cardId>")
   .description("Delete a card")
   .action(async (projectId: string, cardId: string) => {

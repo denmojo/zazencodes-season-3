@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CardActivity } from "./CardActivity";
 
 type Props = {
   open: boolean;
@@ -19,6 +20,8 @@ type Props = {
   initialDescription?: string;
   onSubmit: (title: string, description: string) => Promise<void> | void;
   onDelete?: () => Promise<void> | void;
+  projectId?: string;
+  cardId?: string;
 };
 
 export function CardDialog({
@@ -29,6 +32,8 @@ export function CardDialog({
   initialDescription = "",
   onSubmit,
   onDelete,
+  projectId,
+  cardId,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
@@ -86,6 +91,9 @@ export function CardDialog({
               rows={4}
             />
           </div>
+          {mode === "edit" && open && projectId && cardId && (
+            <CardActivity projectId={projectId} cardId={cardId} />
+          )}
           <DialogFooter className="sm:justify-between">
             <div>
               {mode === "edit" && onDelete && (

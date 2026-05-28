@@ -11,10 +11,14 @@ columnsRouter.post("/", async (req, res) => {
   const title = String(req.body?.title ?? "").trim();
   if (!title) return res.status(400).json({ error: "title is required" });
 
-  const result = await mutateBoard(projectId, (board) => {
+  const result = await mutateBoard(projectId, (board, emit) => {
     const order = board.columns.length;
     const col = { id: randomUUID(), title, order };
     board.columns.push(col);
+    emit("column.created", {
+      columnId: col.id,
+      data: { title },
+    });
     return col;
   });
   if (!result) return res.status(404).json({ error: "project not found" });
@@ -28,10 +32,17 @@ columnsRouter.patch("/:id", async (req, res) => {
     return res.status(400).json({ error: "title is required" });
   }
 
-  const updated = await mutateBoard(projectId, (board) => {
+  const updated = await mutateBoard(projectId, (board, emit) => {
     const col = board.columns.find((c) => c.id === id);
     if (!col) return null;
-    col.title = title.trim();
+    const next = title.trim();
+    if (next !== col.title) {
+      emit("column.renamed", {
+        columnId: col.id,
+        data: { from: col.title, to: next },
+      });
+      col.title = next;
+    }
     return col;
   });
   if (updated === null) return res.status(404).json({ error: "project not found" });
@@ -41,9 +52,15 @@ columnsRouter.patch("/:id", async (req, res) => {
 
 columnsRouter.delete("/:id", async (req, res) => {
   const { projectId, id } = req.params as unknown as Params & { id: string };
-  const ok = await mutateBoard(projectId, (board) => {
+  const ok = await mutateBoard(projectId, (board, emit) => {
     const idx = board.columns.findIndex((c) => c.id === id);
     if (idx === -1) return false;
+    const removed = board.columns[idx];
+    const cardCount = board.cards.filter((c) => c.columnId === id).length;
+    emit("column.deleted", {
+      columnId: removed.id,
+      data: { title: removed.title, deletedCardCount: cardCount },
+    });
     board.columns.splice(idx, 1);
     board.cards = board.cards.filter((card) => card.columnId !== id);
     board.columns

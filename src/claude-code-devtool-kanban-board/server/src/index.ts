@@ -3,6 +3,7 @@ import cors from "cors";
 import { projectsRouter } from "./routes/projects.js";
 import { columnsRouter } from "./routes/columns.js";
 import { cardsRouter } from "./routes/cards.js";
+import { historyRouter } from "./routes/history.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use("/api/projects", projectsRouter);
 app.use("/api/projects/:projectId/columns", columnsRouter);
 app.use("/api/projects/:projectId/cards", cardsRouter);
+app.use("/api", historyRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

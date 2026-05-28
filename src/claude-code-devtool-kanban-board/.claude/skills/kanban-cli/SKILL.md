@@ -71,7 +71,19 @@ kanban cards create <projectId> <columnId> "<title>" ["<description>"]
 kanban cards update <projectId> <cardId> --title/-t "<t>" --description/-d "<d>" --column/-c <columnId> --order/-o <n>
 kanban cards move   <projectId> <cardId> <columnId>   # shorthand for changing column
 kanban cards delete <projectId> <cardId>
+kanban cards history <projectId> <cardId>             # event log for one card
 ```
+
+### History (chronology)
+```bash
+kanban history <projectId>                                   # all events, newest first
+kanban history <projectId> -n 20                             # limit
+kanban history <projectId> -t card.moved                     # filter by type (comma-sep)
+kanban history <projectId> -s 2026-05-28T00:00:00Z           # only since timestamp
+kanban history <projectId> -c <cardId>                       # filter to one card
+```
+
+Events are append-only and survive card deletion. Completing a project archives its events to `server/data/archive/<projectId>.json` to keep the hot `db.json` small; history queries still merge live + archived so completed-project chronology stays viewable. Reopen leaves the archive in place; deleting a project also deletes its archive file. Types: `card.created`, `card.moved`, `card.renamed`, `card.description_changed`, `card.deleted`, `column.{created,renamed,deleted}`, `project.{created,renamed,completed,reopened,deleted}`. Cards also carry `createdAt` / `updatedAt` for the "when was this last touched?" query.
 
 ## Common Workflows
 

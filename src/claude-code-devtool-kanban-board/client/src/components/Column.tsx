@@ -9,6 +9,7 @@ import { ColumnDialog } from "./ColumnDialog";
 import { cn } from "@/lib/utils";
 
 type Props = {
+  projectId: string;
   column: ColumnType;
   cards: CardType[];
   onCreateCard: (columnId: string, title: string, description: string) => Promise<void>;
@@ -22,6 +23,7 @@ type Props = {
 };
 
 export function Column({
+  projectId,
   column,
   cards,
   onCreateCard,
@@ -113,6 +115,8 @@ export function Column({
         open={editingCard !== null}
         onOpenChange={(open) => !open && setEditingCard(null)}
         mode="edit"
+        projectId={projectId}
+        cardId={editingCard?.id}
         initialTitle={editingCard?.title ?? ""}
         initialDescription={editingCard?.description ?? ""}
         onSubmit={async (title, description) => {

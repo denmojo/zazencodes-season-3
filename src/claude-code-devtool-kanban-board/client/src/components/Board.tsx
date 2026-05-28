@@ -115,6 +115,7 @@ export function Board({ projectId }: Props) {
             {columns.map((col) => (
               <Column
                 key={col.id}
+                projectId={projectId}
                 column={col}
                 cards={board.cards.filter((c) => c.columnId === col.id)}
                 onCreateCard={createCard}

@@ -10,6 +10,8 @@ export type Card = {
   title: string;
   description: string;
   order: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Board = {
@@ -22,6 +24,31 @@ export type Project = {
   name: string;
   createdAt: string;
   completedAt: string | null;
+};
+
+export type EventType =
+  | "card.created"
+  | "card.moved"
+  | "card.renamed"
+  | "card.description_changed"
+  | "card.deleted"
+  | "column.created"
+  | "column.renamed"
+  | "column.deleted"
+  | "project.created"
+  | "project.renamed"
+  | "project.completed"
+  | "project.reopened"
+  | "project.deleted";
+
+export type Event = {
+  id: string;
+  at: string;
+  projectId: string;
+  type: EventType;
+  cardId?: string;
+  columnId?: string;
+  data: Record<string, unknown>;
 };
 
 async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
@@ -98,4 +125,20 @@ export const api = {
     request<void>(`/api/projects/${projectId}/cards/${id}`, {
       method: "DELETE",
     }),
+  cardHistory: (projectId: string, cardId: string) =>
+    request<Event[]>(`/api/projects/${projectId}/cards/${cardId}/history`),
+  projectHistory: (
+    projectId: string,
+    opts: { cardId?: string; type?: string; since?: string; limit?: number } = {},
+  ) => {
+    const q = new URLSearchParams();
+    if (opts.cardId) q.set("cardId", opts.cardId);
+    if (opts.type) q.set("type", opts.type);
+    if (opts.since) q.set("since", opts.since);
+    if (opts.limit !== undefined) q.set("limit", String(opts.limit));
+    const qs = q.toString();
+    return request<Event[]>(
+      `/api/projects/${projectId}/history${qs ? `?${qs}` : ""}`,
+    );
+  },
 };

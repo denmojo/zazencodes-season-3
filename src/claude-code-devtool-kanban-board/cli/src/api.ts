@@ -1,4 +1,4 @@
-import type { Board, Card, Column, Project } from "./types.js";
+import type { Board, Card, Column, Event, Project } from "./types.js";
 
 const BASE_URL = process.env.KANBAN_API_URL ?? "http://localhost:3001";
 
@@ -69,4 +69,25 @@ export const api = {
   ) => request<Card>("PATCH", `/api/projects/${projectId}/cards/${id}`, patch),
   deleteCard: (projectId: string, id: string) =>
     request<void>("DELETE", `/api/projects/${projectId}/cards/${id}`),
+
+  projectHistory: (
+    projectId: string,
+    opts: { cardId?: string; type?: string; since?: string; limit?: number } = {},
+  ) => {
+    const q = new URLSearchParams();
+    if (opts.cardId) q.set("cardId", opts.cardId);
+    if (opts.type) q.set("type", opts.type);
+    if (opts.since) q.set("since", opts.since);
+    if (opts.limit !== undefined) q.set("limit", String(opts.limit));
+    const qs = q.toString();
+    return request<Event[]>(
+      "GET",
+      `/api/projects/${projectId}/history${qs ? `?${qs}` : ""}`,
+    );
+  },
+  cardHistory: (projectId: string, cardId: string) =>
+    request<Event[]>(
+      "GET",
+      `/api/projects/${projectId}/cards/${cardId}/history`,
+    ),
 };

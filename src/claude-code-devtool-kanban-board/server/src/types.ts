@@ -10,6 +10,8 @@ export type Card = {
   title: string;
   description: string;
   order: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type Board = {
@@ -24,7 +26,33 @@ export type Project = {
   completedAt: string | null;
 };
 
+export type EventType =
+  | "card.created"
+  | "card.moved"
+  | "card.renamed"
+  | "card.description_changed"
+  | "card.deleted"
+  | "column.created"
+  | "column.renamed"
+  | "column.deleted"
+  | "project.created"
+  | "project.renamed"
+  | "project.completed"
+  | "project.reopened"
+  | "project.deleted";
+
+export type Event = {
+  id: string;
+  at: string;
+  projectId: string;
+  type: EventType;
+  cardId?: string;
+  columnId?: string;
+  data: Record<string, unknown>;
+};
+
 export type Database = {
   projects: Project[];
   boards: Record<string, Board>;
+  events: Event[];
 };

@@ -4,6 +4,7 @@ import { projectsCmd } from "./commands/projects.js";
 import { boardCmd } from "./commands/board.js";
 import { columnsCmd } from "./commands/columns.js";
 import { cardsCmd } from "./commands/cards.js";
+import { historyCmd } from "./commands/history.js";
 
 program
   .name("kanban")
@@ -12,6 +13,7 @@ program
   .addCommand(projectsCmd)
   .addCommand(boardCmd)
   .addCommand(columnsCmd)
-  .addCommand(cardsCmd);
+  .addCommand(cardsCmd)
+  .addCommand(historyCmd);
 
 program.parse();
