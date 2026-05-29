@@ -6,7 +6,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Plus, RotateCcw } from "lucide-react";
 import { useBoard } from "@/hooks/useBoard";
 import { api, type Project } from "@/lib/api";
 import { navigate } from "@/hooks/useHashRoute";
@@ -33,6 +33,8 @@ export function Board({ projectId }: Props) {
   } = useBoard(projectId);
   const [newColumnOpen, setNewColumnOpen] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +49,25 @@ export function Board({ projectId }: Props) {
       cancelled = true;
     };
   }, [projectId]);
+
+  const toggleCompletion = async () => {
+    if (!project || busy) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const updated =
+        project.completedAt === null
+          ? await api.completeProject(project.id)
+          : await api.reopenProject(project.id);
+      setProject(updated);
+    } catch (e) {
+      setActionError(
+        e instanceof Error ? e.message : "failed to update project",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -102,11 +123,41 @@ export function Board({ projectId }: Props) {
           <h1 className="text-lg font-semibold tracking-tight">
             {project?.name ?? "Kanban Board"}
           </h1>
+          {project?.completedAt && (
+            <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">
+              Completed
+            </span>
+          )}
         </div>
-        <Button size="sm" onClick={() => setNewColumnOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Add column
-        </Button>
+        <div className="flex items-center gap-2">
+          {actionError && (
+            <span className="text-xs text-destructive">{actionError}</span>
+          )}
+          {project && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void toggleCompletion()}
+              disabled={busy}
+            >
+              {project.completedAt === null ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4" />
+                  Complete project
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="h-4 w-4" />
+                  Reopen project
+                </>
+              )}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => setNewColumnOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add column
+          </Button>
+        </div>
       </header>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
