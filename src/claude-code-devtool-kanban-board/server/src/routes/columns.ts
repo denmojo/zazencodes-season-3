@@ -11,13 +11,34 @@ columnsRouter.post("/", async (req, res) => {
   const title = String(req.body?.title ?? "").trim();
   if (!title) return res.status(400).json({ error: "title is required" });
 
+  // Optional 0-based insertion point. Omitted = append to the end (legacy behavior).
+  const rawPosition = req.body?.position;
+  let position: number | undefined;
+  if (rawPosition !== undefined && rawPosition !== null) {
+    position = Number(rawPosition);
+    if (!Number.isInteger(position) || position < 0) {
+      return res
+        .status(400)
+        .json({ error: "position must be a non-negative integer" });
+    }
+  }
+
   const result = await mutateBoard(projectId, (board, emit) => {
-    const order = board.columns.length;
+    // Clamp an explicit position into [0, length]; default appends at the end.
+    const order =
+      position === undefined
+        ? board.columns.length
+        : Math.min(position, board.columns.length);
+    // Make room: shift every column at or after the insertion point right by one.
+    // Cards reference columns by id, never by order, so nothing detaches.
+    for (const c of board.columns) {
+      if (c.order >= order) c.order += 1;
+    }
     const col = { id: randomUUID(), title, order };
     board.columns.push(col);
     emit("column.created", {
       columnId: col.id,
-      data: { title },
+      data: { title, position: order },
     });
     return col;
   });
@@ -27,22 +48,65 @@ columnsRouter.post("/", async (req, res) => {
 
 columnsRouter.patch("/:id", async (req, res) => {
   const { projectId, id } = req.params as unknown as Params & { id: string };
-  const title = req.body?.title;
-  if (typeof title !== "string" || !title.trim()) {
-    return res.status(400).json({ error: "title is required" });
+
+  // title is optional now; when present it must be a non-empty string.
+  const hasTitle = req.body?.title !== undefined && req.body?.title !== null;
+  let title: string | undefined;
+  if (hasTitle) {
+    if (typeof req.body.title !== "string" || !req.body.title.trim()) {
+      return res.status(400).json({ error: "title must be a non-empty string" });
+    }
+    title = req.body.title.trim();
+  }
+
+  // order is optional; when present it must be a non-negative integer.
+  const rawOrder = req.body?.order;
+  let order: number | undefined;
+  if (rawOrder !== undefined && rawOrder !== null) {
+    order = Number(rawOrder);
+    if (!Number.isInteger(order) || order < 0) {
+      return res
+        .status(400)
+        .json({ error: "order must be a non-negative integer" });
+    }
+  }
+
+  if (title === undefined && order === undefined) {
+    return res.status(400).json({ error: "nothing to update" });
   }
 
   const updated = await mutateBoard(projectId, (board, emit) => {
     const col = board.columns.find((c) => c.id === id);
     if (!col) return null;
-    const next = title.trim();
-    if (next !== col.title) {
+
+    if (title !== undefined && title !== col.title) {
       emit("column.renamed", {
         columnId: col.id,
-        data: { from: col.title, to: next },
+        data: { from: col.title, to: title },
       });
-      col.title = next;
+      col.title = title;
     }
+
+    if (order !== undefined) {
+      // Move the column to `order` (clamped to the last slot) and reshuffle the
+      // rest so orders stay a contiguous 0..n-1 sequence. Cards reference columns
+      // by id, never by order, so none of them detach.
+      const target = Math.min(order, board.columns.length - 1);
+      const from = col.order;
+      if (target !== from) {
+        for (const c of board.columns) {
+          if (c.id === col.id) continue;
+          if (from < target && c.order > from && c.order <= target) c.order -= 1;
+          else if (from > target && c.order >= target && c.order < from) c.order += 1;
+        }
+        col.order = target;
+        emit("column.moved", {
+          columnId: col.id,
+          data: { from, to: target },
+        });
+      }
+    }
+
     return col;
   });
   if (updated === null) return res.status(404).json({ error: "project not found" });

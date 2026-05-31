@@ -34,6 +34,7 @@ export type EventType =
   | "card.deleted"
   | "column.created"
   | "column.renamed"
+  | "column.moved"
   | "column.deleted"
   | "project.created"
   | "project.renamed"

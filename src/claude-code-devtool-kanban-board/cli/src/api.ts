@@ -42,8 +42,12 @@ export const api = {
   getBoard: (projectId: string) =>
     request<Board>("GET", `/api/projects/${projectId}/board`),
 
-  createColumn: (projectId: string, title: string) =>
-    request<Column>("POST", `/api/projects/${projectId}/columns`, { title }),
+  createColumn: (projectId: string, title: string, position?: number) =>
+    request<Column>(
+      "POST",
+      `/api/projects/${projectId}/columns`,
+      position === undefined ? { title } : { title, position }
+    ),
   renameColumn: (projectId: string, id: string, title: string) =>
     request<Column>("PATCH", `/api/projects/${projectId}/columns/${id}`, {
       title,

@@ -34,6 +34,7 @@ export type EventType =
   | "card.deleted"
   | "column.created"
   | "column.renamed"
+  | "column.moved"
   | "column.deleted"
   | "project.created"
   | "project.renamed"
@@ -88,15 +89,21 @@ export const api = {
 
   getBoard: (projectId: string) =>
     request<Board>(`/api/projects/${projectId}/board`),
-  createColumn: (projectId: string, title: string) =>
+  createColumn: (projectId: string, title: string, position?: number) =>
     request<Column>(`/api/projects/${projectId}/columns`, {
       method: "POST",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify(
+        position === undefined ? { title } : { title, position },
+      ),
     }),
-  renameColumn: (projectId: string, id: string, title: string) =>
+  updateColumn: (
+    projectId: string,
+    id: string,
+    patch: { title?: string; order?: number },
+  ) =>
     request<Column>(`/api/projects/${projectId}/columns/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify(patch),
     }),
   deleteColumn: (projectId: string, id: string) =>
     request<void>(`/api/projects/${projectId}/columns/${id}`, {

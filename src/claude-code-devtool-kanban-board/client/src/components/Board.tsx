@@ -24,7 +24,7 @@ export function Board({ projectId }: Props) {
     loading,
     error,
     createColumn,
-    renameColumn,
+    updateColumn,
     deleteColumn,
     createCard,
     updateCard,
@@ -172,7 +172,8 @@ export function Board({ projectId }: Props) {
                 onCreateCard={createCard}
                 onUpdateCard={updateCard}
                 onDeleteCard={deleteCard}
-                onRenameColumn={renameColumn}
+                columnCount={columns.length}
+                onUpdateColumn={updateColumn}
                 onDeleteColumn={deleteColumn}
               />
             ))}
@@ -189,7 +190,8 @@ export function Board({ projectId }: Props) {
         open={newColumnOpen}
         onOpenChange={setNewColumnOpen}
         mode="create"
-        onSubmit={createColumn}
+        columnCount={columns.length}
+        onSubmit={({ title, order }) => createColumn(title, order)}
       />
     </div>
   );

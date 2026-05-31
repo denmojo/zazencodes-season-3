@@ -15,15 +15,33 @@ export const columnsCmd = new Command("columns").description("Manage columns");
 columnsCmd
   .command("create <projectId> <title>")
   .description("Create a new column")
-  .action(async (projectId: string, title: string) => {
-    try {
-      const col = await api.createColumn(projectId, title);
-      console.log(chalk.green("Column created:"));
-      printColumn(col);
-    } catch (err) {
-      handleError(err);
+  .option(
+    "-p, --position <n>",
+    "0-based position to insert at (default: append to the end)"
+  )
+  .action(
+    async (
+      projectId: string,
+      title: string,
+      opts: { position?: string }
+    ) => {
+      try {
+        const position =
+          opts.position !== undefined ? Number(opts.position) : undefined;
+        if (
+          position !== undefined &&
+          (!Number.isInteger(position) || position < 0)
+        ) {
+          throw new Error("--position must be a non-negative integer");
+        }
+        const col = await api.createColumn(projectId, title, position);
+        console.log(chalk.green("Column created:"));
+        printColumn(col);
+      } catch (err) {
+        handleError(err);
+      }
     }
-  });
+  );
 
 columnsCmd
   .command("rename <projectId> <columnId> <title>")

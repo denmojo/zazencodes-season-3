@@ -18,7 +18,11 @@ type Props = {
     patch: Partial<Pick<CardType, "title" | "description" | "columnId" | "order">>,
   ) => Promise<void>;
   onDeleteCard: (id: string) => Promise<void>;
-  onRenameColumn: (id: string, title: string) => Promise<void>;
+  columnCount: number;
+  onUpdateColumn: (
+    id: string,
+    patch: { title?: string; order?: number },
+  ) => Promise<void>;
   onDeleteColumn: (id: string) => Promise<void>;
 };
 
@@ -29,7 +33,8 @@ export function Column({
   onCreateCard,
   onUpdateCard,
   onDeleteCard,
-  onRenameColumn,
+  columnCount,
+  onUpdateColumn,
   onDeleteColumn,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -72,7 +77,7 @@ export function Column({
             variant="ghost"
             className="h-7 w-7"
             onClick={() => setRenameOpen(true)}
-            aria-label="Rename column"
+            aria-label="Edit column"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -134,7 +139,11 @@ export function Column({
         onOpenChange={setRenameOpen}
         mode="edit"
         initialTitle={column.title}
-        onSubmit={(title) => onRenameColumn(column.id, title)}
+        initialOrder={column.order}
+        columnCount={columnCount}
+        onSubmit={({ title, order }) =>
+          onUpdateColumn(column.id, { title, order })
+        }
       />
     </div>
   );

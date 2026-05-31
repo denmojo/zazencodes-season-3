@@ -33,16 +33,16 @@ export function useBoard(projectId: string) {
   }, [refresh]);
 
   const createColumn = useCallback(
-    async (title: string) => {
-      await api.createColumn(projectId, title);
+    async (title: string, position?: number) => {
+      await api.createColumn(projectId, title, position);
       await refresh();
     },
     [projectId, refresh],
   );
 
-  const renameColumn = useCallback(
-    async (id: string, title: string) => {
-      await api.renameColumn(projectId, id, title);
+  const updateColumn = useCallback(
+    async (id: string, patch: { title?: string; order?: number }) => {
+      await api.updateColumn(projectId, id, patch);
       await refresh();
     },
     [projectId, refresh],
@@ -105,7 +105,7 @@ export function useBoard(projectId: string) {
     ...state,
     refresh,
     createColumn,
-    renameColumn,
+    updateColumn,
     deleteColumn,
     createCard,
     updateCard,
