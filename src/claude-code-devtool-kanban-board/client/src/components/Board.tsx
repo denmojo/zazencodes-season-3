@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
 import { ArrowLeft, CheckCircle2, Plus, RotateCcw } from "lucide-react";
 import { useBoard } from "@/hooks/useBoard";
-import { api, type Project } from "@/lib/api";
+import { api, type Card as CardType, type Project } from "@/lib/api";
 import { navigate } from "@/hooks/useHashRoute";
 import { Button } from "@/components/ui/button";
 import { Column } from "./Column";
+import { CardView } from "./Card";
 import { ColumnDialog } from "./ColumnDialog";
 
 type Props = {
@@ -35,6 +38,7 @@ export function Board({ projectId }: Props) {
   const [project, setProject] = useState<Project | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeCard, setActiveCard] = useState<CardType | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +77,15 @@ export function Board({ projectId }: Props) {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    const data = event.active.data.current as
+      | { type: string; card?: CardType }
+      | undefined;
+    setActiveCard(data?.card ?? null);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveCard(null);
     const { active, over } = event;
     if (!over || !board) return;
     const overData = over.data.current as { type: string; columnId?: string } | undefined;
@@ -160,7 +172,12 @@ export function Board({ projectId }: Props) {
         </div>
       </header>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveCard(null)}
+      >
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
           <div className="flex h-full gap-4 items-stretch">
             {columns.map((col) => (
@@ -184,6 +201,13 @@ export function Board({ projectId }: Props) {
             )}
           </div>
         </div>
+        <DragOverlay dropAnimation={null}>
+          {activeCard ? (
+            <div className="w-72">
+              <CardView card={activeCard} overlay />
+            </div>
+          ) : null}
+        </DragOverlay>
       </DndContext>
 
       <ColumnDialog

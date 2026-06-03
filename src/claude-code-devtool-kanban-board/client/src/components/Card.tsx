@@ -1,5 +1,5 @@
+import { forwardRef } from "react";
 import { useDraggable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import type { Card as CardType } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -22,31 +22,28 @@ function relative(at: string | undefined): string | null {
   return `${day}d ago`;
 }
 
-export function Card({ card, onClick }: Props) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: card.id, data: { type: "card", card } });
+type ViewProps = {
+  card: CardType;
+  /** Faded placeholder left behind in the column while dragging. */
+  dragging?: boolean;
+  /** Rendered inside the DragOverlay (floating clone under the cursor). */
+  overlay?: boolean;
+} & React.HTMLAttributes<HTMLDivElement>;
 
-  const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-  };
-
-  return (
+// Presentational card. Shared by the in-column draggable and the DragOverlay
+// clone so both look identical.
+export const CardView = forwardRef<HTMLDivElement, ViewProps>(
+  ({ card, dragging, overlay, className, ...rest }, ref) => (
     <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      onClick={(e) => {
-        // ignore click that ends a drag
-        if (isDragging) return;
-        e.stopPropagation();
-        onClick();
-      }}
+      ref={ref}
       className={cn(
-        "rounded-md border bg-card p-3 text-sm shadow-sm cursor-grab active:cursor-grabbing select-none",
-        "hover:border-ring transition-colors",
-        isDragging && "opacity-40",
+        "rounded-md border bg-card p-3 text-sm shadow-sm select-none",
+        "cursor-grab active:cursor-grabbing hover:border-ring transition-colors",
+        dragging && "opacity-40",
+        overlay && "cursor-grabbing rotate-2 shadow-lg ring-2 ring-ring",
+        className,
       )}
+      {...rest}
     >
       <div className="font-medium text-card-foreground break-words">
         {card.title}
@@ -65,5 +62,33 @@ export function Card({ card, onClick }: Props) {
         </div>
       )}
     </div>
+  ),
+);
+CardView.displayName = "CardView";
+
+export function Card({ card, onClick }: Props) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: card.id,
+    data: { type: "card", card },
+  });
+
+  // No transform is applied to the source node: while dragging it stays put as
+  // a faded placeholder and the moving clone is rendered by the DragOverlay in
+  // Board.tsx, which portals to <body> so it floats above the columns instead
+  // of being clipped by their overflow.
+  return (
+    <CardView
+      ref={setNodeRef}
+      card={card}
+      dragging={isDragging}
+      {...listeners}
+      {...attributes}
+      onClick={(e) => {
+        // ignore click that ends a drag
+        if (isDragging) return;
+        e.stopPropagation();
+        onClick();
+      }}
+    />
   );
 }
