@@ -2,10 +2,10 @@ import { Router } from "express";
 import { readDb } from "../db.js";
 import { loadArchivedEvents } from "../archive.js";
 import type { Event, EventType } from "../types.js";
+import { resolveProject } from "../slug.js";
+import { resolveCardId } from "../tickets.js";
 
 export const historyRouter = Router({ mergeParams: true });
-
-type Params = { projectId: string; cardId?: string };
 
 function filterEvents(
   events: Event[],
@@ -30,11 +30,10 @@ async function gatherEvents(
 }
 
 historyRouter.get("/projects/:projectId/history", async (req, res) => {
-  const { projectId } = req.params as unknown as Params;
   const db = await readDb();
-  if (!db.boards[projectId] && !db.projects.find((p) => p.id === projectId)) {
-    return res.status(404).json({ error: "project not found" });
-  }
+  const project = resolveProject(db.projects, req.params.projectId);
+  if (!project) return res.status(404).json({ error: "project not found" });
+  const projectId = project.id;
   const cardId = typeof req.query.cardId === "string" ? req.query.cardId : undefined;
   const type = typeof req.query.type === "string" ? req.query.type : undefined;
   const since = typeof req.query.since === "string" ? req.query.since : undefined;
@@ -51,13 +50,18 @@ historyRouter.get("/projects/:projectId/history", async (req, res) => {
 historyRouter.get(
   "/projects/:projectId/cards/:cardId/history",
   async (req, res) => {
-    const { projectId, cardId } = req.params as unknown as Params;
     const db = await readDb();
-    if (!db.boards[projectId]) {
-      return res.status(404).json({ error: "project not found" });
-    }
-    const all = await gatherEvents(db, projectId);
-    const events = filterEvents(all, { projectId, cardId });
+    const project = resolveProject(db.projects, req.params.projectId);
+    if (!project) return res.status(404).json({ error: "project not found" });
+    const board = db.boards[project.id];
+    // Fall back to the raw URL param when the board is absent (board-less
+    // project) or the key matches no card; resolveCardId would throw on an
+    // undefined board, so guard it.
+    const cardId = board
+      ? (resolveCardId(board, project.slug, req.params.cardId) ?? req.params.cardId)
+      : req.params.cardId;
+    const all = await gatherEvents(db, project.id);
+    const events = filterEvents(all, { projectId: project.id, cardId });
     res.json(events);
   },
 );

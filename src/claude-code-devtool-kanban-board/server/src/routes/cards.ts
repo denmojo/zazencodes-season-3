@@ -1,13 +1,16 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { mutateBoard } from "../db.js";
+import { resolveCardId } from "../tickets.js";
 
 export const cardsRouter = Router({ mergeParams: true });
 
-type Params = { projectId: string };
-
 cardsRouter.post("/", async (req, res) => {
-  const { projectId } = req.params as unknown as Params;
+  // projectId comes from req.project (set by resolveProjectParam middleware):
+  // Express re-derives req.params.projectId from the raw URL for mergeParams
+  // sub-routers, clobbering the middleware's GUID rewrite, so we read the
+  // canonical id off the stashed project instead.
+  const projectId = req.project!.id;
   const columnId = String(req.body?.columnId ?? "");
   const title = String(req.body?.title ?? "").trim();
   const description = String(req.body?.description ?? "");
@@ -46,9 +49,12 @@ cardsRouter.post("/", async (req, res) => {
 });
 
 cardsRouter.patch("/:id", async (req, res) => {
-  const { projectId, id } = req.params as unknown as Params & { id: string };
+  const { id } = req.params as unknown as { id: string };
+  const projectId = req.project!.id;
+  const slug = req.project!.slug;
   const updated = await mutateBoard(projectId, (board, emit) => {
-    const card = board.cards.find((c) => c.id === id);
+    const cardId = resolveCardId(board, slug, id);
+    const card = cardId ? board.cards.find((c) => c.id === cardId) : null;
     if (!card) return null;
     let mutated = false;
 
@@ -114,9 +120,12 @@ cardsRouter.patch("/:id", async (req, res) => {
 });
 
 cardsRouter.delete("/:id", async (req, res) => {
-  const { projectId, id } = req.params as unknown as Params & { id: string };
+  const { id } = req.params as unknown as { id: string };
+  const projectId = req.project!.id;
+  const slug = req.project!.slug;
   const ok = await mutateBoard(projectId, (board, emit) => {
-    const idx = board.cards.findIndex((c) => c.id === id);
+    const cardId = resolveCardId(board, slug, id);
+    const idx = cardId ? board.cards.findIndex((c) => c.id === cardId) : -1;
     if (idx === -1) return false;
     const removed = board.cards[idx];
     const lastCol = board.columns.find((c) => c.id === removed.columnId);

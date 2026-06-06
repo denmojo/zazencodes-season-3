@@ -4,10 +4,11 @@ import { mutateBoard } from "../db.js";
 
 export const columnsRouter = Router({ mergeParams: true });
 
-type Params = { projectId: string };
-
 columnsRouter.post("/", async (req, res) => {
-  const { projectId } = req.params as unknown as Params;
+  // Canonical projectId from req.project (set by the resolveProjectParam
+  // middleware); req.params.projectId is the raw slug-or-GUID from the URL and
+  // is NOT rewritten for mergeParams sub-routers.
+  const projectId = req.project!.id;
   const title = String(req.body?.title ?? "").trim();
   if (!title) return res.status(400).json({ error: "title is required" });
 
@@ -47,7 +48,8 @@ columnsRouter.post("/", async (req, res) => {
 });
 
 columnsRouter.patch("/:id", async (req, res) => {
-  const { projectId, id } = req.params as unknown as Params & { id: string };
+  const { id } = req.params as unknown as { id: string };
+  const projectId = req.project!.id;
 
   // title is optional now; when present it must be a non-empty string.
   const hasTitle = req.body?.title !== undefined && req.body?.title !== null;
@@ -115,7 +117,8 @@ columnsRouter.patch("/:id", async (req, res) => {
 });
 
 columnsRouter.delete("/:id", async (req, res) => {
-  const { projectId, id } = req.params as unknown as Params & { id: string };
+  const { id } = req.params as unknown as { id: string };
+  const projectId = req.project!.id;
   const ok = await mutateBoard(projectId, (board, emit) => {
     const idx = board.columns.findIndex((c) => c.id === id);
     if (idx === -1) return false;
