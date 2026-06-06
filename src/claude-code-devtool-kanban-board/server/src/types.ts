@@ -6,6 +6,7 @@ export type Column = {
 
 export type Card = {
   id: string;
+  number: number;            // per-project monotonic ticket number; display id = `${slug}-${number}`
   columnId: string;
   title: string;
   description: string;
@@ -17,10 +18,12 @@ export type Card = {
 export type Board = {
   columns: Column[];
   cards: Card[];
+  nextTicket: number;        // next ticket number to assign on this board (starts at 1)
 };
 
 export type Project = {
   id: string;
+  slug: string;              // unique human id; URL identifier + ticket prefix; immutable
   name: string;
   createdAt: string;
   completedAt: string | null;
