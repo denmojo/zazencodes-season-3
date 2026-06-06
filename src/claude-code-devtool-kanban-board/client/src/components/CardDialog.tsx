@@ -22,6 +22,8 @@ type Props = {
   onDelete?: () => Promise<void> | void;
   projectId?: string;
   cardId?: string;
+  /** Ticket id (e.g. "kdev-7"); shown as the dialog title in edit mode. */
+  ticketId?: string;
 };
 
 export function CardDialog({
@@ -34,6 +36,7 @@ export function CardDialog({
   onDelete,
   projectId,
   cardId,
+  ticketId,
 }: Props) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
@@ -58,14 +61,20 @@ export function CardDialog({
     }
   };
 
+  const isCreate = mode === "create";
+  // In edit mode the title carries the ticket id (e.g. "kdev-7"); the fields
+  // are self-evidently editable, so the "Update card details" subtitle is dropped.
+  const headerTitle = isCreate ? "New card" : (ticketId ?? "Edit card");
+  const headerDesc = isCreate ? "Add a new card to this column." : null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent {...(headerDesc ? {} : { "aria-describedby": undefined })}>
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "New card" : "Edit card"}</DialogTitle>
-          <DialogDescription>
-            {mode === "create" ? "Add a new card to this column." : "Update card details."}
-          </DialogDescription>
+          <DialogTitle className={!isCreate && ticketId ? "font-mono" : undefined}>
+            {headerTitle}
+          </DialogTitle>
+          {headerDesc && <DialogDescription>{headerDesc}</DialogDescription>}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-2">

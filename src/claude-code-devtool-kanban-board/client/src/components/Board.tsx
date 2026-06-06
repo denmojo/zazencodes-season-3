@@ -243,6 +243,9 @@ export function Board({ projectId, cardRef }: Props) {
         mode="edit"
         projectId={projectId}
         cardId={deepCard?.id}
+        ticketId={
+          project?.slug && deepCard ? `${project.slug}-${deepCard.number}` : undefined
+        }
         initialTitle={deepCard?.title ?? ""}
         initialDescription={deepCard?.description ?? ""}
         onSubmit={async (title, description) => {

@@ -124,6 +124,9 @@ export function Column({
         mode="edit"
         projectId={projectId}
         cardId={editingCard?.id}
+        ticketId={
+          slug && editingCard ? `${slug}-${editingCard.number}` : undefined
+        }
         initialTitle={editingCard?.title ?? ""}
         initialDescription={editingCard?.description ?? ""}
         onSubmit={async (title, description) => {
