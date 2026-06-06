@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { createProject, mutateDb, readDb } from "../db.js";
 import { archiveProjectEvents, deleteArchive } from "../archive.js";
+import { isValidSlug, resolveProject } from "../slug.js";
 
 export const projectsRouter = Router();
 
@@ -15,18 +16,27 @@ projectsRouter.get("/", async (_req, res) => {
 projectsRouter.post("/", async (req, res) => {
   const name = String(req.body?.name ?? "").trim();
   if (!name) return res.status(400).json({ error: "name is required" });
+  const slug = String(req.body?.slug ?? "").trim();
+  if (!isValidSlug(slug)) {
+    return res.status(400).json({
+      error:
+        "slug must match ^[a-z0-9][a-z0-9-]*$, be non-reserved, and is required",
+    });
+  }
 
-  const project = await mutateDb((db, emit) => {
-    const { project, board } = createProject(name);
+  const result = await mutateDb((db, emit) => {
+    if (db.projects.some((p) => p.slug === slug)) return null;
+    const { project, board } = createProject(name, slug);
     db.projects.push(project);
     db.boards[project.id] = board;
     emit("project.created", {
       projectId: project.id,
-      data: { name: project.name },
+      data: { name: project.name, slug: project.slug },
     });
     return project;
   });
-  res.status(201).json(project);
+  if (!result) return res.status(409).json({ error: "slug already in use" });
+  res.status(201).json(result);
 });
 
 projectsRouter.patch("/:id", async (req, res) => {
@@ -37,7 +47,7 @@ projectsRouter.patch("/:id", async (req, res) => {
   }
 
   const updated = await mutateDb((db, emit) => {
-    const project = db.projects.find((p) => p.id === id);
+    const project = resolveProject(db.projects, id);
     if (!project) return null;
     const next = name.trim();
     if (next !== project.name) {
@@ -56,17 +66,17 @@ projectsRouter.patch("/:id", async (req, res) => {
 projectsRouter.post("/:id/complete", async (req, res) => {
   const { id } = req.params;
   const updated = await mutateDb(async (db, emit) => {
-    const project = db.projects.find((p) => p.id === id);
+    const project = resolveProject(db.projects, id);
     if (!project) return null;
     project.completedAt = new Date().toISOString();
     emit("project.completed", {
       projectId: project.id,
       data: { completedAt: project.completedAt },
     });
-    const toArchive = db.events.filter((e) => e.projectId === id);
+    const toArchive = db.events.filter((e) => e.projectId === project.id);
     if (toArchive.length > 0) {
-      await archiveProjectEvents(id, toArchive);
-      db.events = db.events.filter((e) => e.projectId !== id);
+      await archiveProjectEvents(project.id, toArchive);
+      db.events = db.events.filter((e) => e.projectId !== project.id);
     }
     return project;
   });
@@ -77,7 +87,7 @@ projectsRouter.post("/:id/complete", async (req, res) => {
 projectsRouter.post("/:id/reopen", async (req, res) => {
   const { id } = req.params;
   const updated = await mutateDb((db, emit) => {
-    const project = db.projects.find((p) => p.id === id);
+    const project = resolveProject(db.projects, id);
     if (!project) return null;
     project.completedAt = null;
     emit("project.reopened", {
@@ -93,17 +103,15 @@ projectsRouter.post("/:id/reopen", async (req, res) => {
 projectsRouter.delete("/:id", async (req, res) => {
   const { id } = req.params;
   const ok = await mutateDb(async (db, emit) => {
-    const idx = db.projects.findIndex((p) => p.id === id);
+    const idx = db.projects.findIndex((p) => p.id === id || p.slug === id);
     if (idx === -1) return false;
     const removed = db.projects[idx];
+    const canonical = removed.id;
     db.projects.splice(idx, 1);
-    delete db.boards[id];
-    db.events = db.events.filter((e) => e.projectId !== id);
-    await deleteArchive(id);
-    emit("project.deleted", {
-      projectId: removed.id,
-      data: { name: removed.name },
-    });
+    delete db.boards[canonical];
+    db.events = db.events.filter((e) => e.projectId !== canonical);
+    await deleteArchive(canonical);
+    emit("project.deleted", { projectId: canonical, data: { name: removed.name } });
     return true;
   });
   if (!ok) return res.status(404).json({ error: "project not found" });
@@ -111,9 +119,8 @@ projectsRouter.delete("/:id", async (req, res) => {
 });
 
 projectsRouter.get("/:id/board", async (req, res) => {
-  const { id } = req.params;
   const db = await readDb();
-  const board = db.boards[id];
-  if (!board) return res.status(404).json({ error: "project not found" });
-  res.json(board);
+  const project = resolveProject(db.projects, req.params.id);
+  if (!project) return res.status(404).json({ error: "project not found" });
+  res.json(db.boards[project.id]);
 });

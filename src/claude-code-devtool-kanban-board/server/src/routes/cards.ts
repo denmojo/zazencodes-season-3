@@ -20,8 +20,11 @@ cardsRouter.post("/", async (req, res) => {
     if (!column) return null;
     const order = board.cards.filter((c) => c.columnId === columnId).length;
     const now = new Date().toISOString();
+    const num = board.nextTicket;
+    board.nextTicket = num + 1;
     const created = {
       id: randomUUID(),
+      number: num,
       columnId,
       title,
       description,

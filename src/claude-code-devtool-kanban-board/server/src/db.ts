@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import type { Board, Database, Event, EventType } from "./types.js";
+import type { Board, Database, Event, EventType, Project } from "./types.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.resolve(__dirname, "../data/db.json");
@@ -16,6 +16,7 @@ function emptyBoard(): Board {
       { id: randomUUID(), title: "Done", order: 2 },
     ],
     cards: [],
+    nextTicket: 1,
   };
 }
 
@@ -35,8 +36,10 @@ async function migrateIfNeeded(): Promise<Database> {
   try {
     const raw = await fs.readFile(LEGACY_FILE, "utf8");
     const legacy = JSON.parse(raw) as Board;
+    legacy.nextTicket = legacy.nextTicket ?? 1;
     const project = {
       id: randomUUID(),
+      slug: "default",
       name: "Default",
       createdAt: new Date().toISOString(),
       completedAt: null,
@@ -53,6 +56,7 @@ async function migrateIfNeeded(): Promise<Database> {
   } catch {
     const project = {
       id: randomUUID(),
+      slug: "default",
       name: "Default",
       createdAt: new Date().toISOString(),
       completedAt: null,
@@ -92,6 +96,11 @@ export async function readDb(): Promise<Database> {
     for (const card of board.cards) {
       if (typeof card.createdAt !== "string") card.createdAt = now;
       if (typeof card.updatedAt !== "string") card.updatedAt = card.createdAt;
+    }
+    // Ticket-number invariants (defensive; the migration is the real source).
+    if (typeof board.nextTicket !== "number") {
+      const maxNum = board.cards.reduce((m, c) => Math.max(m, c.number ?? 0), 0);
+      board.nextTicket = maxNum + 1;
     }
   }
   return parsed;
@@ -155,13 +164,14 @@ export async function mutateBoard<T>(
   return result;
 }
 
-export function createProject(name: string): {
-  project: { id: string; name: string; createdAt: string; completedAt: null };
+export function createProject(name: string, slug: string): {
+  project: Project;
   board: Board;
 } {
   return {
     project: {
       id: randomUUID(),
+      slug,
       name,
       createdAt: new Date().toISOString(),
       completedAt: null,
