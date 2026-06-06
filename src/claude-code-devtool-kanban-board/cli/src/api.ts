@@ -28,8 +28,8 @@ async function request<T>(
 
 export const api = {
   listProjects: () => request<Project[]>("GET", "/api/projects"),
-  createProject: (name: string) =>
-    request<Project>("POST", "/api/projects", { name }),
+  createProject: (name: string, slug: string) =>
+    request<Project>("POST", "/api/projects", { name, slug }),
   renameProject: (id: string, name: string) =>
     request<Project>("PATCH", `/api/projects/${id}`, { name }),
   deleteProject: (id: string) =>

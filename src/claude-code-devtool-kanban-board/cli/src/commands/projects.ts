@@ -27,11 +27,11 @@ projectsCmd
   });
 
 projectsCmd
-  .command("create <name>")
-  .description("Create a new project")
-  .action(async (name: string) => {
+  .command("create <slug> <name...>")
+  .description("Create a new project (slug is the URL id and ticket prefix)")
+  .action(async (slug: string, nameParts: string[]) => {
     try {
-      const project = await api.createProject(name);
+      const project = await api.createProject(nameParts.join(" "), slug);
       console.log(chalk.green("Project created:"));
       printProject(project);
     } catch (err) {

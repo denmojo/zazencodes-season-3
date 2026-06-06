@@ -5,15 +5,15 @@ import { printBoard } from "../utils/display.js";
 
 export const boardCmd = new Command("board")
   .description("Show the board for a project")
-  .argument("<projectId>", "Project ID")
-  .action(async (projectId: string) => {
+  .argument("<project>", "Project slug or ID")
+  .action(async (project: string) => {
     try {
       const [board, projects] = await Promise.all([
-        api.getBoard(projectId),
+        api.getBoard(project),
         api.listProjects(),
       ]);
-      const project = projects.find((p) => p.id === projectId);
-      printBoard(board, project?.name);
+      const found = projects.find((p) => p.slug === project || p.id === project);
+      printBoard(board, found?.name, found?.slug);
     } catch (err) {
       handleError(err);
     }

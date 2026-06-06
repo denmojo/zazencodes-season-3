@@ -10,6 +10,7 @@ export function printProjects(projects: Project[]): void {
   const table = new Table({
     head: [
       chalk.cyan("ID"),
+      chalk.cyan("Slug"),
       chalk.cyan("Name"),
       chalk.cyan("Created"),
       chalk.cyan("Completed"),
@@ -20,7 +21,7 @@ export function printProjects(projects: Project[]): void {
       ? new Date(p.completedAt).toLocaleString()
       : chalk.dim("-");
     const name = p.completedAt ? chalk.dim(p.name) : p.name;
-    table.push([p.id, name, new Date(p.createdAt).toLocaleString(), completed]);
+    table.push([p.id, chalk.bold(p.slug), name, new Date(p.createdAt).toLocaleString(), completed]);
   }
   console.log(table.toString());
 }
@@ -33,7 +34,7 @@ export function printProject(project: Project): void {
   );
 }
 
-export function printBoard(board: Board, projectName?: string): void {
+export function printBoard(board: Board, projectName?: string, slug?: string): void {
   if (projectName) {
     console.log(chalk.bold.cyan(`\n  ${projectName}\n`));
   }
@@ -66,7 +67,9 @@ export function printBoard(board: Board, projectName?: string): void {
                 : c.description
             )
           : "";
-      const idStr = chalk.dim(`[${c.id.slice(0, 8)}]`);
+      const idStr = chalk.dim(
+        `[${slug && typeof c.number === "number" ? `${slug}-${c.number}` : c.id.slice(0, 8)}]`,
+      );
       return `${chalk.white(c.title)}\n${desc ? desc + "\n" : ""}${idStr}`;
     });
   }
