@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 
 export type Route =
   | { name: "projects" }
-  | { name: "board"; projectId: string };
+  | { name: "board"; projectId: string; cardRef?: string };
 
 function parse(hash: string): Route {
   const clean = hash.replace(/^#/, "");
-  const match = clean.match(/^\/projects\/([^/]+)/);
-  if (match) return { name: "board", projectId: match[1] };
+  const m = clean.match(/^\/projects\/([^/]+)(?:\/([^/]+))?/);
+  if (m) return { name: "board", projectId: m[1], cardRef: m[2] };
   return { name: "projects" };
 }
 

@@ -99,7 +99,7 @@ export function Projects() {
                   <ProjectItem
                     key={p.id}
                     project={p}
-                    onOpen={() => navigate(`/projects/${p.id}`)}
+                    onOpen={() => navigate(`/projects/${p.slug}`)}
                     onEdit={() => setDialog({ mode: "edit", project: p })}
                     onDelete={() => void handleDelete(p)}
                     onComplete={() => void handleComplete(p)}
@@ -127,7 +127,7 @@ export function Projects() {
                       <ProjectItem
                         key={p.id}
                         project={p}
-                        onOpen={() => navigate(`/projects/${p.id}`)}
+                        onOpen={() => navigate(`/projects/${p.slug}`)}
                         onEdit={() => setDialog({ mode: "edit", project: p })}
                         onDelete={() => void handleDelete(p)}
                         onReopen={() => void handleReopen(p)}
@@ -144,9 +144,9 @@ export function Projects() {
       <ProjectDialog
         state={dialog}
         onOpenChange={(open) => !open && setDialog({ mode: "closed" })}
-        onSubmit={async (name) => {
+        onSubmit={async (name, slug) => {
           if (dialog.mode === "create") {
-            await api.createProject(name);
+            await api.createProject(name, slug);
           } else if (dialog.mode === "edit") {
             await api.renameProject(dialog.project.id, name);
           }
@@ -260,31 +260,33 @@ function ProjectItem({
 type ProjectDialogProps = {
   state: DialogState;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string) => Promise<void>;
+  onSubmit: (name: string, slug: string) => Promise<void>;
 };
 
 function ProjectDialog({ state, onOpenChange, onSubmit }: ProjectDialogProps) {
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (state.mode === "edit") setName(state.project.name);
-    else if (state.mode === "create") setName("");
+    if (state.mode === "edit") { setName(state.project.name); setSlug(""); }
+    else if (state.mode === "create") { setName(""); setSlug(""); }
   }, [state]);
+
+  const isCreate = state.mode === "create";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (isCreate && !slug.trim()) return;
     setSubmitting(true);
     try {
-      await onSubmit(name.trim());
+      await onSubmit(name.trim(), slug.trim());
       onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
   };
-
-  const isCreate = state.mode === "create";
 
   return (
     <Dialog open={state.mode !== "closed"} onOpenChange={onOpenChange}>
@@ -312,6 +314,19 @@ function ProjectDialog({ state, onOpenChange, onSubmit }: ProjectDialogProps) {
               required
             />
           </div>
+          {isCreate && (
+            <div className="grid gap-2">
+              <label className="text-sm font-medium" htmlFor="project-slug">
+                Slug (URL id, e.g. kdev)
+              </label>
+              <Input
+                id="project-slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                required
+              />
+            </div>
+          )}
           <DialogFooter>
             <Button
               type="button"
@@ -321,7 +336,7 @@ function ProjectDialog({ state, onOpenChange, onSubmit }: ProjectDialogProps) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || !name.trim()}>
+            <Button type="submit" disabled={submitting || !name.trim() || (isCreate && !slug.trim())}>
               {isCreate ? "Create" : "Save"}
             </Button>
           </DialogFooter>

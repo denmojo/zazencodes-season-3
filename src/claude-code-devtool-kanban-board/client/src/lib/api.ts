@@ -73,10 +73,10 @@ async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
 
 export const api = {
   listProjects: () => request<Project[]>("/api/projects"),
-  createProject: (name: string) =>
+  createProject: (name: string, slug: string) =>
     request<Project>("/api/projects", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, slug }),
     }),
   renameProject: (id: string, name: string) =>
     request<Project>(`/api/projects/${id}`, {

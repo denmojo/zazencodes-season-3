@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   card: CardType;
   onClick: () => void;
+  slug?: string;
 };
 
 function relative(at: string | undefined): string | null {
@@ -28,12 +29,14 @@ type ViewProps = {
   dragging?: boolean;
   /** Rendered inside the DragOverlay (floating clone under the cursor). */
   overlay?: boolean;
+  /** Project slug for rendering the ticket badge (e.g. "kdev"). */
+  slug?: string;
 } & React.HTMLAttributes<HTMLDivElement>;
 
 // Presentational card. Shared by the in-column draggable and the DragOverlay
 // clone so both look identical.
 export const CardView = forwardRef<HTMLDivElement, ViewProps>(
-  ({ card, dragging, overlay, className, ...rest }, ref) => (
+  ({ card, dragging, overlay, slug, className, ...rest }, ref) => (
     <div
       ref={ref}
       className={cn(
@@ -45,6 +48,11 @@ export const CardView = forwardRef<HTMLDivElement, ViewProps>(
       )}
       {...rest}
     >
+      {slug && typeof card.number === "number" && (
+        <div className="mb-1 font-mono text-[10px] text-muted-foreground">
+          {slug}-{card.number}
+        </div>
+      )}
       <div className="font-medium text-card-foreground break-words">
         {card.title}
       </div>
@@ -66,7 +74,7 @@ export const CardView = forwardRef<HTMLDivElement, ViewProps>(
 );
 CardView.displayName = "CardView";
 
-export function Card({ card, onClick }: Props) {
+export function Card({ card, onClick, slug }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
     data: { type: "card", card },
@@ -81,6 +89,7 @@ export function Card({ card, onClick }: Props) {
       ref={setNodeRef}
       card={card}
       dragging={isDragging}
+      slug={slug}
       {...listeners}
       {...attributes}
       onClick={(e) => {

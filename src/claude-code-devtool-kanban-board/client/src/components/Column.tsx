@@ -24,6 +24,7 @@ type Props = {
     patch: { title?: string; order?: number },
   ) => Promise<void>;
   onDeleteColumn: (id: string) => Promise<void>;
+  slug?: string;
 };
 
 export function Column({
@@ -36,6 +37,7 @@ export function Column({
   columnCount,
   onUpdateColumn,
   onDeleteColumn,
+  slug,
 }: Props) {
   const [createOpen, setCreateOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -95,7 +97,7 @@ export function Column({
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
         {sorted.map((card) => (
-          <Card key={card.id} card={card} onClick={() => setEditingCard(card)} />
+          <Card key={card.id} card={card} onClick={() => setEditingCard(card)} slug={slug} />
         ))}
       </div>
 

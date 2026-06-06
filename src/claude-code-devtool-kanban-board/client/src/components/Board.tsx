@@ -15,13 +15,15 @@ import { navigate } from "@/hooks/useHashRoute";
 import { Button } from "@/components/ui/button";
 import { Column } from "./Column";
 import { CardView } from "./Card";
+import { CardDialog } from "./CardDialog";
 import { ColumnDialog } from "./ColumnDialog";
 
 type Props = {
   projectId: string;
+  cardRef?: string;
 };
 
-export function Board({ projectId }: Props) {
+export function Board({ projectId, cardRef }: Props) {
   const {
     board,
     loading,
@@ -46,7 +48,7 @@ export function Board({ projectId }: Props) {
       .listProjects()
       .then((list) => {
         if (cancelled) return;
-        setProject(list.find((p) => p.id === projectId) ?? null);
+        setProject(list.find((p) => p.id === projectId || p.slug === projectId) ?? null);
       })
       .catch(() => {});
     return () => {
@@ -118,6 +120,22 @@ export function Board({ projectId }: Props) {
   if (!board) return null;
 
   const columns = [...board.columns].sort((a, b) => a.order - b.order);
+
+  const deepCard = (() => {
+    if (!cardRef || !board) return null;
+    // GUID-first (mirrors the server's resolveCardId): a real card id resolves
+    // before the number regex runs, so a UUID whose final segment is all digits
+    // can't be mis-read as a ticket number.
+    const byId = board.cards.find((c) => c.id === cardRef);
+    if (byId) return byId;
+    const slug = project?.slug;
+    const m = cardRef.match(/^(?:.+-)?(\d+)$/);
+    if (m && slug) {
+      const n = Number(m[1]);
+      return board.cards.find((c) => c.number === n) ?? null;
+    }
+    return null;
+  })();
 
   return (
     <div className="flex h-screen flex-col">
@@ -192,6 +210,7 @@ export function Board({ projectId }: Props) {
                 columnCount={columns.length}
                 onUpdateColumn={updateColumn}
                 onDeleteColumn={deleteColumn}
+                slug={project?.slug}
               />
             ))}
             {columns.length === 0 && (
@@ -216,6 +235,22 @@ export function Board({ projectId }: Props) {
         mode="create"
         columnCount={columns.length}
         onSubmit={({ title, order }) => createColumn(title, order)}
+      />
+
+      <CardDialog
+        open={deepCard !== null}
+        onOpenChange={(open) => { if (!open) navigate(`/projects/${projectId}`); }}
+        mode="edit"
+        projectId={projectId}
+        cardId={deepCard?.id}
+        initialTitle={deepCard?.title ?? ""}
+        initialDescription={deepCard?.description ?? ""}
+        onSubmit={async (title, description) => {
+          if (deepCard) await updateCard(deepCard.id, { title, description });
+        }}
+        onDelete={async () => {
+          if (deepCard) { await deleteCard(deepCard.id); navigate(`/projects/${projectId}`); }
+        }}
       />
     </div>
   );
